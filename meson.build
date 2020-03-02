@@ -385,6 +385,11 @@ possible_cc_flags = [
         # optimizations enabled, producing essentially false positives.
         '-Wno-maybe-uninitialized',
 
+        # work-around for gcc 8 and 9, otherwise alloca defined as macro won't be reported (see gcc #94004)
+        '-Wsystem-headers',
+        '-Wvla-larger-than=20',
+        '-Walloca-larger-than=20',
+
         '-ffast-math',
         '-fno-common',
         '-fdiagnostics-show-option',

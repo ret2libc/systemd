@@ -329,11 +329,11 @@ layout: default
 
 - Avoid fixed-size string buffers, unless you really know the maximum size and
   that maximum size is small. They are a source of errors, since they possibly
-  result in truncated strings. It is often nicer to use dynamic memory,
-  `alloca()` or VLAs. If you do allocate fixed-size strings on the stack, then
-  it is probably only OK if you either use a maximum size such as `LINE_MAX`,
-  or count in detail the maximum size a string can have. (`DECIMAL_STR_MAX` and
-  `DECIMAL_STR_WIDTH` macros are your friends for this!)
+  result in truncated strings. It is often nicer to use dynamic memory, e.g.
+  `malloc`/`new`. If you do allocate fixed-size strings on the stack, then it
+  is probably only OK if you count in detail the maximum size a string can
+  have and that size is small (`DECIMAL_STR_MAX` and `DECIMAL_STR_WIDTH` macros
+  are your friends for this!)
 
   Or in other words, if you use `char buf[256]` then you are likely doing
   something wrong!
@@ -341,18 +341,25 @@ layout: default
 - Make use of `_cleanup_free_` and friends. It makes your code much nicer to
   read (and shorter)!
 
-- Use `alloca()`, but never forget that it is not OK to invoke `alloca()`
-  within a loop or within function call parameters. `alloca()` memory is
-  released at the end of a function, and not at the end of a `{}` block. Thus,
-  if you invoke it in a loop, you keep increasing the stack pointer without
-  ever releasing memory again. (VLAs have better behavior in this case, so
-  consider using them as an alternative.)  Regarding not using `alloca()`
-  within function parameters, see the BUGS section of the `alloca(3)` man page.
-
-- If you want to concatenate two or more strings, consider using `strjoina()`
-  or `strjoin()` rather than `asprintf()`, as the latter is a lot slower. This
+- If you want to concatenate two or more strings, consider using `strjoin()` or
+  `strjoina()` rather than `asprintf()`, as the latter is a lot slower. This
   matters particularly in inner loops (but note that `strjoina()` cannot be
-  used there).
+  used there and should not be used when the maximum string length is too big
+  or unknown).
+
+- In general, prefer `malloc()` over stack-based allocations (e.g. `alloca()`,
+  `newa()`, VLA) as it is not possible to check whether an allocation on the
+  stack is successful or not. Consider using `alloca()`/VLA only in hot paths,
+  where performance *really* matters.
+
+- If necessary use `alloca()`, but never forget that it is not OK to invoke
+  `alloca()` within a loop or within function call parameters. `alloca()`
+  memory is released at the end of a function, and not at the end of a `{}`
+  block. Thus, if you invoke it in a loop, you keep increasing the stack
+  pointer without ever releasing memory again. (VLAs have better behavior in
+  this case, so consider using them as an alternative.) Regarding not using
+  `alloca()` within function parameters, see the BUGS section of the
+  `alloca(3)` man page.
 
 ## Runtime Behaviour
 
